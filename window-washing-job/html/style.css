@@ -1,0 +1,114 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Poppins", sans-serif;
+}
+
+#window-washing-container {
+  display: none;
+  position: absolute;
+  top: 20vh;
+  right: 2vw;
+  width: 300px;
+  height: auto;
+}
+
+.job-card {
+  background-color: rgba(0, 0, 0, 0.8);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+  color: white;
+}
+
+.job-header {
+  background-color: #3498db;
+  padding: 15px;
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.job-header i {
+  font-size: 20px;
+  margin-right: 10px;
+}
+
+.job-header h2 {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+#close-ui {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.job-content {
+  padding: 15px;
+}
+
+.progress-section,
+.team-section {
+  margin-bottom: 20px;
+}
+
+.progress-section h3,
+.team-section h3 {
+  font-size: 16px;
+  margin-bottom: 10px;
+  color: #3498db;
+}
+
+.progress-bar-container {
+  width: 100%;
+  height: 15px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 5px;
+}
+
+.progress-bar {
+  height: 100%;
+  background-color: #2ecc71;
+  width: 0%;
+  transition: width 0.3s ease;
+}
+
+#progress-text {
+  text-align: right;
+  font-size: 14px;
+  color: #ccc;
+}
+
+#team-list {
+  list-style: none;
+}
+
+#team-list li {
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+}
+
+#team-list li:last-child {
+  border-bottom: none;
+}
+
+#team-list li:before {
+  content: "\f007";
+  font-family: "Font Awesome 5 Free";
+  margin-right: 10px;
+  color: #3498db;
+}
+

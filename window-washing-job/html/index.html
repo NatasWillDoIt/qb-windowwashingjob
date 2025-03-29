@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Window Washing</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+</head>
+<body>
+    <div id="window-washing-container">
+        <div class="job-card">
+            <div class="job-header">
+                <i class="fas fa-spray-can"></i>
+                <h2>Window Washing</h2>
+                <button id="close-ui"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="job-content">
+                <div class="progress-section">
+                    <h3>Progress</h3>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" id="progress-bar"></div>
+                    </div>
+                    <p id="progress-text">0/0</p>
+                </div>
+                <div class="team-section">
+                    <h3>Team Members</h3>
+                    <ul id="team-list">
+                        <!-- Team members will be added here dynamically -->
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="nui://game/ui/jquery.js" type="text/javascript"></script>
+    <script src="script.js"></script>
+</body>
+</html>
+
