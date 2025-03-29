@@ -101,3 +101,24 @@ AddEventHandler('onResourceStop', function(resource)
     activeJobs = {}
 end)
 
+-- Add event for stopping job
+RegisterNetEvent('qb-windowwashing:server:stopJob', function()
+    local src = source
+    
+    -- Find and remove player from any active jobs
+    for building, jobData in pairs(activeJobs) do
+        for i, playerId in ipairs(jobData.team) do
+            if playerId == src then
+                table.remove(activeJobs[building].team, i)
+                
+                -- If team is empty, remove the job
+                if #activeJobs[building].team == 0 then
+                    activeJobs[building] = nil
+                end
+                
+                break
+            end
+        end
+    end
+end)
+

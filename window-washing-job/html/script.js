@@ -22,6 +22,16 @@ $(() => {
   $("#close-ui").click(() => {
     $.post("https://qb-windowwashing/closeUI", JSON.stringify({}))
   })
+
+  // Add quit job button functionality
+  $("#quit-job").click(() => {
+    $.post("https://qb-windowwashing/quitJob", JSON.stringify({}))
+  })
+
+  // Add NUI callback for quit job
+  RegisterNUICallback("quitJob", () => {
+    $.post("https://qb-windowwashing/quitJob", JSON.stringify({}))
+  })
 })
 
 function updateProgress(progress) {

@@ -74,3 +74,25 @@ Config.Buildings = {
     }
 }
 
+-- Add job vehicle and ped configurations
+Config.JobVehicle = "speedo"  -- Vehicle model for window washing job
+
+-- Ped locations for job coordinators
+Config.PedLocations = {
+    {
+        coords = vector4(-71.42, -812.18, 44.23, 340.0),  -- Near downtown_1 building
+        model = "s_m_y_construct_01",
+        vehicleSpawn = vector4(-75.42, -818.18, 44.23, 340.0)
+    },
+    {
+        coords = vector4(285.42, -986.68, 29.39, 180.0),  -- Near downtown_2 building
+        model = "s_m_y_construct_01",
+        vehicleSpawn = vector4(280.42, -990.68, 29.39, 180.0)
+    },
+    {
+        coords = vector4(-364.56, 221.43, 86.68, 180.0),  -- Near vinewood building
+        model = "s_m_y_construct_01",
+        vehicleSpawn = vector4(-370.56, 225.43, 86.68, 180.0)
+    }
+}
+

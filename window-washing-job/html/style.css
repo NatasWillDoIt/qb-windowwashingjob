@@ -52,6 +52,23 @@
   font-size: 16px;
 }
 
+/* Add styling for the quit job button */
+#quit-job {
+  position: absolute;
+  right: 40px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+#quit-job:hover {
+  color: #e74c3c;
+}
+
 .job-content {
   padding: 15px;
 }

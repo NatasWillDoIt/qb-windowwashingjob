@@ -6,12 +6,108 @@ local currentBuilding = nil
 local currentWindow = nil
 local windowsCompleted = 0
 local totalWindows = 0
+local jobVehicle = nil
+local hasJobVehicle = false
 
 -- Load animations
 local function LoadAnimDict(dict)
     while not HasAnimDictLoaded(dict) do
         RequestAnimDict(dict)
         Wait(5)
+    end
+end
+
+-- Add these functions after the LoadAnimDict function
+
+-- Spawn job vehicle
+local function SpawnJobVehicle(coords)
+    local vehicleHash = GetHashKey(Config.JobVehicle)
+    RequestModel(vehicleHash)
+    while not HasModelLoaded(vehicleHash) do
+        Wait(0)
+    end
+    
+    local vehicle = CreateVehicle(vehicleHash, coords.x, coords.y, coords.z, coords.w, true, false)
+    SetEntityAsMissionEntity(vehicle, true, true)
+    SetVehicleNumberPlateText(vehicle, "WASH"..tostring(math.random(1000, 9999)))
+    SetVehicleColours(vehicle, 0, 0) -- Black
+    SetVehicleDirtLevel(vehicle, 0.0)
+    
+    -- Give keys to player (using qb-vehiclekeys)
+    TriggerEvent('vehiclekeys:client:SetOwner', QBCore.Functions.GetPlate(vehicle))
+    
+    return vehicle
+end
+
+-- Spawn job ped
+local function SpawnJobPed()
+    for k, v in pairs(Config.PedLocations) do
+        local pedModel = GetHashKey(v.model)
+        RequestModel(pedModel)
+        while not HasModelLoaded(pedModel) do
+            Wait(0)
+        end
+        
+        local ped = CreatePed(4, pedModel, v.coords.x, v.coords.y, v.coords.z - 1.0, v.coords.w, false, true)
+        SetEntityAsMissionEntity(ped, true, true)
+        SetBlockingOfNonTemporaryEvents(ped, true)
+        FreezeEntityPosition(ped, true)
+        SetEntityInvincible(ped, true)
+        
+        -- Add target interaction for the ped
+        exports['qb-target']:AddTargetEntity(ped, {
+            options = {
+                {
+                    type = "client",
+                    event = "qb-windowwashing:client:getJobVehicle",
+                    icon = "fas fa-car",
+                    label = "Request Work Vehicle",
+                    canInteract = function()
+                        return isDoingJob and not hasJobVehicle
+                    end
+                }
+            },
+            distance = 2.5
+        })
+    end
+end
+
+-- Stop the job
+local function StopJob(notify)
+    if not isDoingJob then return end
+    
+    -- Remove window target zones
+    if currentBuilding then
+        for i, window in ipairs(currentBuilding.windows) do
+            exports['qb-target']:RemoveZone("window_"..currentBuilding.name.."_"..i)
+        end
+    end
+    
+    -- Delete job vehicle if it exists
+    if jobVehicle and DoesEntityExist(jobVehicle) then
+        DeleteVehicle(jobVehicle)
+    end
+    
+    -- Reset variables
+    isDoingJob = false
+    hasJobVehicle = false
+    jobVehicle = nil
+    currentBuilding = nil
+    currentWindow = nil
+    windowsCompleted = 0
+    totalWindows = 0
+    
+    -- Hide UI
+    SendNUIMessage({
+        action = "hideUI"
+    })
+    
+    -- Notify server to remove from active jobs
+    TriggerServerEvent("qb-windowwashing:server:stopJob")
+    
+    -- Notify player
+    if notify then
+        QBCore.Functions.Notify("You've stopped working.", "primary")
     end
 end
 
@@ -64,7 +160,7 @@ local function SetupTargetInteractions()
     end
 end
 
--- Start the window washing job
+-- Modify the 'qb-windowwashing:client:startJob' event to include the job ped info
 RegisterNetEvent('qb-windowwashing:client:startJob', function(data)
     if isDoingJob then
         QBCore.Functions.Notify("You're already working!", "error")
@@ -92,6 +188,10 @@ RegisterNetEvent('qb-windowwashing:client:startJob', function(data)
                     icon = "fas fa-spray-can",
                     label = "Wash Window",
                     windowId = i,
+                    canInteract = function()
+                        -- Check if player is in a vehicle
+                        return not IsPedInAnyVehicle(PlayerPedId(), false)
+                    end
                 },
             },
             distance = 3.0
@@ -108,21 +208,56 @@ RegisterNetEvent('qb-windowwashing:client:startJob', function(data)
         team = {GetPlayerName(PlayerId())}
     })
     
-    QBCore.Functions.Notify("Window washing job started! Clean all " .. totalWindows .. " windows.", "success")
+    QBCore.Functions.Notify("Window washing job started! Talk to the job coordinator to get a work vehicle.", "success")
+    QBCore.Functions.Notify("You can use /quitjob to stop working at any time.", "info")
 end)
 
--- Wash a window
+-- Add event for getting job vehicle
+RegisterNetEvent('qb-windowwashing:client:getJobVehicle', function()
+    if not isDoingJob then
+        QBCore.Functions.Notify("You need to start a job first!", "error")
+        return
+    end
+    
+    if hasJobVehicle and DoesEntityExist(jobVehicle) then
+        QBCore.Functions.Notify("You already have a work vehicle!", "error")
+        return
+    end
+    
+    -- Find closest ped location
+    local playerPos = GetEntityCoords(PlayerPedId())
+    local closestPed = nil
+    local closestDistance = 9999.0
+    
+    for k, v in pairs(Config.PedLocations) do
+        local distance = #(playerPos - vector3(v.coords.x, v.coords.y, v.coords.z))
+        if distance < closestDistance then
+            closestDistance = distance
+            closestPed = v
+        end
+    end
+    
+    if closestPed and closestPed.vehicleSpawn then
+        jobVehicle = SpawnJobVehicle(closestPed.vehicleSpawn)
+        hasJobVehicle = true
+        QBCore.Functions.Notify("Work vehicle ready! Remember to exit the vehicle before washing windows.", "success")
+    else
+        QBCore.Functions.Notify("Could not spawn work vehicle!", "error")
+    end
+end)
+
+-- Modify the 'qb-windowwashing:client:washWindow' event to check if player is in a vehicle
 RegisterNetEvent('qb-windowwashing:client:washWindow', function(data)
     if not isDoingJob then return end
     
-    local windowId = data.windowId
-    currentWindow = windowId
-    
-    -- Check if window is already cleaned
-    if currentBuilding.windows[windowId].cleaned then
-        QBCore.Functions.Notify("This window is already clean!", "error")
+    -- Check if player is in a vehicle
+    if IsPedInAnyVehicle(PlayerPedId(), false) then
+        QBCore.Functions.Notify("You need to exit the vehicle to wash windows!", "error")
         return
     end
+    
+    local windowId = data.windowId
+    currentWindow = windowId
     
     -- Start washing animation
     local washingTime = math.random(Config.MinWashTime, Config.MaxWashTime)
@@ -167,9 +302,26 @@ RegisterNetEvent('qb-windowwashing:client:washWindow', function(data)
     end)
 end)
 
--- Finish the job and get paid
+-- Add command to quit job
+RegisterCommand('quitjob', function()
+    if not isDoingJob then
+        QBCore.Functions.Notify("You're not working!", "error")
+        return
+    end
+    
+    StopJob(true)
+end, false)
+
+-- Modify the FinishJob function to handle the job vehicle
 function FinishJob()
+    -- Delete job vehicle if it exists
+    if jobVehicle and DoesEntityExist(jobVehicle) then
+        DeleteVehicle(jobVehicle)
+    end
+    
     isDoingJob = false
+    hasJobVehicle = false
+    jobVehicle = nil
     
     -- Remove window target zones
     for i, window in ipairs(currentBuilding.windows) do
@@ -305,13 +457,14 @@ RegisterCommand('jointeam', function()
     TriggerEvent('qb-windowwashing:client:requestTeam')
 end, false)
 
--- Initialize everything when player loads
+-- Modify the 'QBCore:Client:OnPlayerLoaded' event to spawn job peds
 RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
     SetupJobLocations()
     SetupTargetInteractions()
+    SpawnJobPed()
 end)
 
--- Cleanup on resource stop
+-- Modify the 'onResourceStop' handler to include cleanup for job vehicle and peds
 AddEventHandler('onResourceStop', function(resource)
     if resource ~= GetCurrentResourceName() then return end
     
@@ -324,6 +477,11 @@ AddEventHandler('onResourceStop', function(resource)
         for i, window in ipairs(v.windows) do
             exports['qb-target']:RemoveZone("window_"..k.."_"..i)
         end
+    end
+    
+    -- Delete job vehicle if it exists
+    if jobVehicle and DoesEntityExist(jobVehicle) then
+        DeleteVehicle(jobVehicle)
     end
     
     -- Hide UI
@@ -339,5 +497,11 @@ RegisterNUICallback('closeUI', function()
     else
         SetNuiFocus(false, false)
     end
+end)
+
+-- Add NUI callback for quit job
+RegisterNUICallback('quitJob', function()
+    StopJob(true)
+    SetNuiFocus(false, false)
 end)
 
