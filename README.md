@@ -9,4 +9,4 @@
 6. Player can quit the job at any time using the UI button or `/quitjob` command
 7. When the job is completed or quit, the work vehicle is automatically deleted
 
-this was made for @Rox @Lehediik they can do as they pleas with this 
+this was made for [RoxRenaldo](https://github.com/RoxRenaldo) @Lehediik they can do as they pleas with this 
